@@ -1,0 +1,45 @@
+{
+    "name": "github-commit-reporter",
+    "version": "1.0.0",
+    "description": "A Node.js tool that generates day-wise commit reports from GitHub repositories with optional AI analysis",
+    "main": "index.js",
+    "scripts": {
+        "start": "node cli.js",
+        "cli": "node cli.js",
+        "server": "node server.js",
+        "web": "node server.js",
+        "test": "node test/test.js",
+        "quick": "node cli.js quick",
+        "enhanced": "node cli.js enhanced",
+        "range": "node cli.js range",
+        "stats": "node cli.js stats"
+    },
+    "keywords": [
+        "github",
+        "commits",
+        "reports",
+        "automation",
+        "ai",
+        "analysis"
+    ],
+    "author": "Your Name",
+    "license": "MIT",
+    "dependencies": {
+        "axios": "^1.6.0",
+        "chalk": "^4.1.2",
+        "commander": "^11.1.0",
+        "dotenv": "^17.2.2",
+        "express": "^4.21.2",
+        "fs-extra": "^11.1.1",
+        "moment": "^2.29.4",
+        "openai": "^4.20.0"
+    },
+    "engines": {
+        "node": ">=14.0.0"
+    },
+    "bin": {
+        "github-reporter": "./cli.js",
+        "github-reporter-cli": "./cli.js",
+        "github-reporter-server": "./server.js"
+    }
+}
