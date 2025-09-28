@@ -315,6 +315,118 @@ class ReportController {
             throw new Error(`Failed to generate multiple reports: ${error.message}`);
         }
     }
+
+    /**
+     * Generate a quick report for selected commits
+     * @param {Array} commits - Array of selected commits
+     * @param {string} format - Output format
+     * @returns {Promise<Object>} Report data
+     */
+    async generateQuickReportForSelectedCommits(commits, format = 'text') {
+        try {
+            if (!commits || commits.length === 0) {
+                return {
+                    report: 'No commits selected for report generation',
+                    filename: 'no-commits-selected.txt',
+                    summary: {
+                        totalCommits: 0,
+                        totalAdditions: 0,
+                        totalDeletions: 0,
+                        netChanges: 0,
+                        dateRange: 'Selected commits',
+                        author: 'Selected commits'
+                    }
+                };
+            }
+
+            // Generate report for selected commits
+            const report = this.reportService.generateQuickReport(commits, 'Selected Commits', format);
+
+            // Generate filename
+            const filename = this.reportService.generateFilename('quick-selected', 'selected-commits', format);
+
+            // Get statistics
+            const statistics = this.reportService.getReportStatistics(commits);
+
+            return {
+                report,
+                filename,
+                summary: {
+                    totalCommits: statistics.totalCommits,
+                    totalAdditions: statistics.totalAdditions,
+                    totalDeletions: statistics.totalDeletions,
+                    netChanges: statistics.netChanges,
+                    dateRange: 'Selected commits',
+                    author: 'Selected commits'
+                }
+            };
+
+        } catch (error) {
+            throw new Error(`Failed to generate quick report for selected commits: ${error.message}`);
+        }
+    }
+
+    /**
+     * Generate an enhanced report for selected commits with AI analysis
+     * @param {Array} commits - Array of selected commits
+     * @param {string} format - Output format
+     * @param {string} openaiKey - OpenAI API key
+     * @returns {Promise<Object>} Report data
+     */
+    async generateEnhancedReportForSelectedCommits(commits, format = 'text', openaiKey) {
+        try {
+            if (!commits || commits.length === 0) {
+                return {
+                    report: 'No commits selected for report generation',
+                    filename: 'no-commits-selected.txt',
+                    summary: {
+                        totalCommits: 0,
+                        totalAdditions: 0,
+                        totalDeletions: 0,
+                        netChanges: 0,
+                        dateRange: 'Selected commits',
+                        author: 'Selected commits',
+                        aiAnalysis: false
+                    }
+                };
+            }
+
+            if (!openaiKey) {
+                throw new Error('OpenAI API key is required for enhanced reports');
+            }
+
+            // Generate report with AI analysis for selected commits
+            const report = await this.reportService.generateEnhancedReport(
+                commits,
+                'Selected Commits',
+                format,
+                openaiKey ? (commit) => this.commitController.analyzeCommitsWithAI([commit]) : null
+            );
+
+            // Generate filename
+            const filename = this.reportService.generateFilename('enhanced-selected', 'selected-commits', format);
+
+            // Get statistics
+            const statistics = this.reportService.getReportStatistics(commits);
+
+            return {
+                report,
+                filename,
+                summary: {
+                    totalCommits: statistics.totalCommits,
+                    totalAdditions: statistics.totalAdditions,
+                    totalDeletions: statistics.totalDeletions,
+                    netChanges: statistics.netChanges,
+                    dateRange: 'Selected commits',
+                    author: 'Selected commits',
+                    aiAnalysis: !!openaiKey
+                }
+            };
+
+        } catch (error) {
+            throw new Error(`Failed to generate enhanced report for selected commits: ${error.message}`);
+        }
+    }
 }
 
 module.exports = ReportController;

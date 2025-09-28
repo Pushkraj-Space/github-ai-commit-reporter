@@ -69,9 +69,10 @@ router.post('/generate-report', async (req, res) => {
 router.get('/repositories', async (req, res) => {
     try {
         const { sort, per_page, type } = req.query;
-        const options = { sort, per_page, type };
+        const options = { sort, per_page, type, visibility: 'all' };
 
         const repositories = await repositoryController.getUserRepositories(options);
+        // console.log(repositories);
         res.json(repositories);
 
     } catch (error) {
@@ -289,6 +290,56 @@ router.post('/save-report', async (req, res) => {
     } catch (error) {
         console.error('Error saving report:', error);
         res.status(500).json({ error: 'Failed to save report' });
+    }
+});
+
+/**
+ * @route POST /api/generate-selected-commits-report
+ * @desc Generate report for selected commits
+ * @access Public
+ */
+router.post('/generate-selected-commits-report', async (req, res) => {
+    try {
+        const { commits, reportType, outputFormat, openaiKey } = req.body;
+
+        // Validate inputs
+        if (!commits || !Array.isArray(commits) || commits.length === 0) {
+            return res.status(400).json({
+                error: 'Commits array is required and must not be empty'
+            });
+        }
+
+        if (!reportType || !outputFormat) {
+            return res.status(400).json({
+                error: 'Report type and output format are required'
+            });
+        }
+
+        let reportData;
+
+        if (reportType === 'enhanced') {
+            if (!openaiKey) {
+                return res.status(400).json({
+                    error: 'OpenAI API key is required for enhanced reports'
+                });
+            }
+            reportData = await reportController.generateEnhancedReportForSelectedCommits(
+                commits,
+                outputFormat,
+                openaiKey
+            );
+        } else {
+            reportData = await reportController.generateQuickReportForSelectedCommits(
+                commits,
+                outputFormat
+            );
+        }
+
+        res.json(reportData);
+
+    } catch (error) {
+        console.error('Error generating selected commits report:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 

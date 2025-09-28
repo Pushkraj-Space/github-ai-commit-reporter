@@ -53,6 +53,7 @@ class GitHubService {
             sort: options.sort || 'updated',
             per_page: options.per_page || 100,
             type: options.type || 'all',
+            visibility: options.visibility || 'all',
             ...options
         };
 
