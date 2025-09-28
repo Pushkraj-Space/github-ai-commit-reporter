@@ -149,14 +149,20 @@ class GitHubService {
      * @param {string} fromDate - Start date
      * @param {string} toDate - End date
      * @param {string} branch - Branch name
+     * @param {string} author - Author/committer filter (optional)
      * @returns {Promise<Array>} List of commits
      */
-    async getCommitsForDateRange(owner, repo, fromDate, toDate, branch = 'main') {
+    async getCommitsForDateRange(owner, repo, fromDate, toDate, branch = 'main', author = null) {
         const options = {
             since: fromDate,
             until: toDate,
             branch
         };
+
+        // Add author filter if specified
+        if (author) {
+            options.author = author;
+        }
 
         return await this.getCommits(owner, repo, options);
     }
@@ -167,14 +173,15 @@ class GitHubService {
      * @param {string} repo - Repository name
      * @param {string} date - Target date
      * @param {string} branch - Branch name
+     * @param {string} author - Author/committer filter (optional)
      * @returns {Promise<Array>} List of commits
      */
-    async getCommitsForDate(owner, repo, date, branch = 'main') {
+    async getCommitsForDate(owner, repo, date, branch = 'main', author = null) {
         const moment = require('moment');
         const fromDate = date;
         const toDate = moment(date).add(1, 'day').format('YYYY-MM-DD');
 
-        return await this.getCommitsForDateRange(owner, repo, fromDate, toDate, branch);
+        return await this.getCommitsForDateRange(owner, repo, fromDate, toDate, branch, author);
     }
 
     /**
@@ -222,6 +229,93 @@ class GitHubService {
         } catch (error) {
             throw new Error(`Error fetching commit details for ${sha}: ${error.message}`);
         }
+    }
+
+    /**
+     * Get commit diff/patch
+     * @param {string} owner - Repository owner
+     * @param {string} repo - Repository name
+     * @param {string} sha - Commit SHA
+     * @returns {Promise<Object>} Commit diff data
+     */
+    async getCommitDiff(owner, repo, sha) {
+        try {
+            const response = await axios.get(`${this.baseUrl}/repos/${owner}/${repo}/commits/${sha}`, {
+                headers: {
+                    ...this.headers,
+                    'Accept': 'application/vnd.github.v3.diff'
+                }
+            });
+
+            return {
+                sha: sha,
+                diff: response.data,
+                files: this.parseDiffFiles(response.data)
+            };
+        } catch (error) {
+            throw new Error(`Error fetching commit diff for ${sha}: ${error.message}`);
+        }
+    }
+
+    /**
+     * Parse diff to extract file information
+     * @param {string} diff - Raw diff string
+     * @returns {Array} Array of file changes
+     */
+    parseDiffFiles(diff) {
+        const files = [];
+        const lines = diff.split('\n');
+        let currentFile = null;
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+
+            if (line.startsWith('diff --git')) {
+                if (currentFile) {
+                    files.push(currentFile);
+                }
+                currentFile = {
+                    filename: this.extractFilenameFromDiffLine(line),
+                    additions: 0,
+                    deletions: 0,
+                    changes: []
+                };
+            } else if (line.startsWith('@@') && currentFile) {
+                // Parse hunk header
+                const hunkMatch = line.match(/@@ -(\d+),?(\d*) \+(\d+),?(\d*) @@/);
+                if (hunkMatch) {
+                    currentFile.changes.push({
+                        oldStart: parseInt(hunkMatch[1]),
+                        oldLines: parseInt(hunkMatch[2]) || 1,
+                        newStart: parseInt(hunkMatch[3]),
+                        newLines: parseInt(hunkMatch[4]) || 1
+                    });
+                }
+            } else if (line.startsWith('+') && !line.startsWith('+++') && currentFile) {
+                currentFile.additions++;
+            } else if (line.startsWith('-') && !line.startsWith('---') && currentFile) {
+                currentFile.deletions++;
+            }
+        }
+
+        if (currentFile) {
+            files.push(currentFile);
+        }
+
+        return files;
+    }
+
+    /**
+     * Extract filename from diff line
+     * @param {string} line - Diff line
+     * @returns {string} Filename
+     */
+    extractFilenameFromDiffLine(line) {
+        const match = line.match(/diff --git a\/(.+) b\/(.+)/);
+        if (match) {
+            return match[2]; // Return the 'b' filename (new filename)
+        }
+        return '';
     }
 
     /**

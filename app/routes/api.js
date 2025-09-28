@@ -127,12 +127,12 @@ router.get('/repository/:owner/:repo', async (req, res) => {
 router.get('/commits/:owner/:repo', async (req, res) => {
     try {
         const { owner, repo } = req.params;
-        const { branch, fromDate, toDate } = req.query;
+        const { branch, fromDate, toDate, author } = req.query;
         const repoUrl = `https://github.com/${owner}/${repo}`;
 
         let commits;
         if (fromDate && toDate) {
-            commits = await commitController.getCommitsForDateRange(repoUrl, fromDate, toDate, branch);
+            commits = await commitController.getCommitsForDateRange(repoUrl, fromDate, toDate, branch, author);
         } else {
             commits = await commitController.getAllCommits(repoUrl, branch);
         }
@@ -161,6 +161,25 @@ router.get('/commits/:owner/:repo/:sha', async (req, res) => {
     } catch (error) {
         console.error('Error fetching commit details:', error);
         res.status(500).json({ error: 'Failed to fetch commit details' });
+    }
+});
+
+/**
+ * @route GET /api/commits/:owner/:repo/:sha/diff
+ * @desc Get commit diff/patch
+ * @access Public
+ */
+router.get('/commits/:owner/:repo/:sha/diff', async (req, res) => {
+    try {
+        const { owner, repo, sha } = req.params;
+        const repoUrl = `https://github.com/${owner}/${repo}`;
+
+        const diff = await commitController.getCommitDiff(repoUrl, sha);
+        res.json(diff);
+
+    } catch (error) {
+        console.error('Error fetching commit diff:', error);
+        res.status(500).json({ error: 'Failed to fetch commit diff' });
     }
 });
 

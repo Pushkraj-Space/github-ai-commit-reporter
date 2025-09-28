@@ -41,13 +41,8 @@ class ReportController {
                 throw new Error('From date cannot be after to date');
             }
 
-            // Get commits
-            let commits = await this.commitController.getCommitsForDateRange(repoUrl, fromDate, toDate, branch);
-
-            // Filter by author if specified
-            if (author) {
-                commits = this.filterCommitsByAuthor(commits, author);
-            }
+            // Get commits (with author filtering at API level)
+            const commits = await this.commitController.getCommitsForDateRange(repoUrl, fromDate, toDate, branch, author);
 
             if (commits.length === 0) {
                 const authorText = author ? ` by ${author}` : '';
@@ -119,13 +114,8 @@ class ReportController {
                 throw new Error('From date cannot be after to date');
             }
 
-            // Get commits
-            let commits = await this.commitController.getCommitsForDateRange(repoUrl, fromDate, toDate, branch);
-
-            // Filter by author if specified
-            if (author) {
-                commits = this.filterCommitsByAuthor(commits, author);
-            }
+            // Get commits (with author filtering at API level)
+            const commits = await this.commitController.getCommitsForDateRange(repoUrl, fromDate, toDate, branch, author);
 
             if (commits.length === 0) {
                 const authorText = author ? ` by ${author}` : '';

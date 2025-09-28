@@ -40,12 +40,13 @@ class CommitController {
      * @param {string} fromDate - Start date
      * @param {string} toDate - End date
      * @param {string} branch - Branch name
+     * @param {string} author - Author/committer filter (optional)
      * @returns {Promise<Array>} Array of commits
      */
-    async getCommitsForDateRange(repoUrl, fromDate, toDate, branch = 'main') {
+    async getCommitsForDateRange(repoUrl, fromDate, toDate, branch = 'main', author = null) {
         try {
             const { owner, repo } = this.githubService.extractRepoInfo(repoUrl);
-            const commits = await this.githubService.getCommitsForDateRange(owner, repo, fromDate, toDate, branch);
+            const commits = await this.githubService.getCommitsForDateRange(owner, repo, fromDate, toDate, branch, author);
 
             return commits.map(commitData => new Commit(commitData));
         } catch (error) {
@@ -308,6 +309,22 @@ class CommitController {
     validateCommit(commitData) {
         const commit = new Commit(commitData);
         return commit.isValid();
+    }
+
+    /**
+     * Get commit diff/patch
+     * @param {string} repoUrl - Repository URL
+     * @param {string} sha - Commit SHA
+     * @returns {Promise<Object>} Commit diff data
+     */
+    async getCommitDiff(repoUrl, sha) {
+        try {
+            const { owner, repo } = this.githubService.extractRepoInfo(repoUrl);
+            const diff = await this.githubService.getCommitDiff(owner, repo, sha);
+            return diff;
+        } catch (error) {
+            throw new Error(`Failed to get commit diff: ${error.message}`);
+        }
     }
 }
 
